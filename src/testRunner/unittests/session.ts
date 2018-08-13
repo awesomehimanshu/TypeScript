@@ -4,6 +4,7 @@ namespace ts.server {
     let lastWrittenToHost: string;
     const noopFileWatcher: FileWatcher = { close: noop };
     const mockHost: ServerHost = {
+        log: ts.notImplemented,
         args: [],
         newLine: "\n",
         useCaseSensitiveFileNames: true,

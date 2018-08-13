@@ -14,10 +14,9 @@ namespace ts {
         return normalizePath(referencedFileName);
     }
 
-    /* @internal */
-    export function computeCommonSourceDirectoryOfFilenames(fileNames: string[], currentDirectory: string, getCanonicalFileName: GetCanonicalFileName): string {
+    function computeCommonSourceDirectoryOfFilenames(fileNames: ReadonlyArray<string>, currentDirectory: string, getCanonicalFileName: GetCanonicalFileName): string {
         let commonPathComponents: string[] | undefined;
-        const failed = forEach(fileNames, sourceFile => {
+        for (const sourceFile of fileNames) {
             // Each file contributes into common source file path
             const sourcePathComponents = getNormalizedPathComponents(sourceFile, currentDirectory);
             sourcePathComponents.pop(); // The base file name is not part of the common directory path
@@ -25,7 +24,7 @@ namespace ts {
             if (!commonPathComponents) {
                 // first file
                 commonPathComponents = sourcePathComponents;
-                return;
+                continue;
             }
 
             const n = Math.min(commonPathComponents.length, sourcePathComponents.length);
@@ -33,7 +32,8 @@ namespace ts {
                 if (getCanonicalFileName(commonPathComponents[i]) !== getCanonicalFileName(sourcePathComponents[i])) {
                     if (i === 0) {
                         // Failed to find any common path component
-                        return true;
+                        // A common path can not be found when paths span multiple drives on windows, for example
+                        return "";
                     }
 
                     // New common path found that is 0 -> i-1
@@ -46,11 +46,6 @@ namespace ts {
             if (sourcePathComponents.length < commonPathComponents.length) {
                 commonPathComponents.length = sourcePathComponents.length;
             }
-        });
-
-        // A common path can not be found when paths span multiple drives on windows, for example
-        if (failed) {
-            return "";
         }
 
         if (!commonPathComponents) { // Can happen when all input files are .d.ts files
@@ -174,6 +169,7 @@ namespace ts {
         const realpath = sys.realpath && ((path: string) => sys.realpath!(path));
 
         return {
+            log: message => sys.log(message),
             getSourceFile,
             getDefaultLibLocation,
             getDefaultLibFileName: options => combinePaths(getDefaultLibLocation(), getDefaultLibFileName(options)),
@@ -552,7 +548,7 @@ namespace ts {
         let processingDefaultLibFiles: SourceFile[] | undefined;
         let processingOtherFiles: SourceFile[] | undefined;
         let files: SourceFile[];
-        let commonSourceDirectory: string;
+        //const getCommonSourceDirectory = memoize(getCommonSourceDirectoryWorker);
         let diagnosticsProducingTypeChecker: TypeChecker;
         let noDiagnosticsTypeChecker: TypeChecker;
         let classifiableNames: UnderscoreEscapedMap<true>;
@@ -789,28 +785,34 @@ namespace ts {
             return ts.toPath(fileName, currentDirectory, getCanonicalFileName);
         }
 
-        function getCommonSourceDirectory() {
-            if (commonSourceDirectory === undefined) {
-                const emittedFiles = filter(files, file => sourceFileMayBeEmitted(file, options, isSourceFileFromExternalLibrary));
-                if (options.rootDir && checkSourceFilesBelongToPath(emittedFiles, options.rootDir)) {
-                    // If a rootDir is specified use it as the commonSourceDirectory
-                    commonSourceDirectory = getNormalizedAbsolutePath(options.rootDir, currentDirectory);
-                }
-                else if (options.composite) {
-                    // Project compilations never infer their root from the input source paths
-                    commonSourceDirectory = getDirectoryPath(normalizeSlashes(options.configFilePath!)); // TODO: GH#18217
-                    checkSourceFilesBelongToPath(emittedFiles, commonSourceDirectory);
-                }
-                else {
-                    commonSourceDirectory = computeCommonSourceDirectory(emittedFiles);
-                }
+        //I thought memoization was the problem, I was wrong. What's up then?
+        function getCommonSourceDirectory(): string {
+            let commonSourceDirectory;
+            const emittedFiles = files.filter(file => sourceFileMayBeEmitted(file, options, isSourceFileFromExternalLibrary));
+            console.log({
+                isRootDir: !!options.rootDir,
+                isComposite: !!options.composite,
+            });
+            if (options.rootDir && checkSourceFilesBelongToPath(emittedFiles, options.rootDir)) {
+                // If a rootDir is specified use it as the commonSourceDirectory
+                commonSourceDirectory = getNormalizedAbsolutePath(options.rootDir, currentDirectory);
+            }
+            else if (options.composite) { //if error the first time, do again and error again?
+                // Project compilations never infer their root from the input source paths
+                commonSourceDirectory = getDirectoryPath(normalizeSlashes(options.configFilePath!)); // TODO: GH#18217
+                console.log({ kind: "DOIN IT!", commonSourceDirectory });
+                checkSourceFilesBelongToPath(emittedFiles, commonSourceDirectory);
+            }
+            else {
+                commonSourceDirectory = computeCommonSourceDirectory(emittedFiles);
+                console.log({ kind: "DOIN IT OTHER WAY", commonSourceDirectory });
+            }
 
-                if (commonSourceDirectory && commonSourceDirectory[commonSourceDirectory.length - 1] !== directorySeparator) {
-                    // Make sure directory path ends with directory separator so this string can directly
-                    // used to replace with "" to get the relative path of the source file and the relative path doesn't
-                    // start with / making it rooted path
-                    commonSourceDirectory += directorySeparator;
-                }
+            if (commonSourceDirectory && commonSourceDirectory[commonSourceDirectory.length - 1] !== directorySeparator) {
+                // Make sure directory path ends with directory separator so this string can directly
+                // used to replace with "" to get the relative path of the source file and the relative path doesn't
+                // start with / making it rooted path
+                return commonSourceDirectory + directorySeparator;
             }
             return commonSourceDirectory;
         }
@@ -2320,28 +2322,21 @@ namespace ts {
             }
         }
 
-        function computeCommonSourceDirectory(sourceFiles: SourceFile[]): string {
-            const fileNames: string[] = [];
-            for (const file of sourceFiles) {
-                if (!file.isDeclarationFile) {
-                    fileNames.push(file.fileName);
-                }
-            }
+        function computeCommonSourceDirectory(sourceFiles: ReadonlyArray<SourceFile>): string {
+            const fileNames = mapDefined(sourceFiles, file => file.isDeclarationFile ? undefined : file.fileName);
             return computeCommonSourceDirectoryOfFilenames(fileNames, currentDirectory, getCanonicalFileName);
         }
 
-        function checkSourceFilesBelongToPath(sourceFiles: SourceFile[], rootDirectory: string): boolean {
+        function checkSourceFilesBelongToPath(sourceFiles: ReadonlyArray<SourceFile>, rootDirectory: string): boolean {
             let allFilesBelongToPath = true;
-            if (sourceFiles) {
-                const absoluteRootDirectoryPath = host.getCanonicalFileName(getNormalizedAbsolutePath(rootDirectory, currentDirectory));
+            const absoluteRootDirectoryPath = host.getCanonicalFileName(getNormalizedAbsolutePath(rootDirectory, currentDirectory));
 
-                for (const sourceFile of sourceFiles) {
-                    if (!sourceFile.isDeclarationFile) {
-                        const absoluteSourceFilePath = host.getCanonicalFileName(getNormalizedAbsolutePath(sourceFile.fileName, currentDirectory));
-                        if (absoluteSourceFilePath.indexOf(absoluteRootDirectoryPath) !== 0) {
-                            programDiagnostics.add(createCompilerDiagnostic(Diagnostics.File_0_is_not_under_rootDir_1_rootDir_is_expected_to_contain_all_source_files, sourceFile.fileName, rootDirectory));
-                            allFilesBelongToPath = false;
-                        }
+            for (const sourceFile of sourceFiles) {
+                if (!sourceFile.isDeclarationFile) {
+                    const absoluteSourceFilePath = host.getCanonicalFileName(getNormalizedAbsolutePath(sourceFile.fileName, currentDirectory));
+                    if (!startsWith(absoluteSourceFilePath, absoluteRootDirectoryPath)) {
+                        programDiagnostics.add(createCompilerDiagnostic(Diagnostics.File_0_is_not_under_rootDir_1_rootDir_is_expected_to_contain_all_source_files, sourceFile.fileName, rootDirectory));
+                        allFilesBelongToPath = false;
                     }
                 }
             }

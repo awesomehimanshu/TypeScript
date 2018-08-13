@@ -459,6 +459,7 @@ namespace ts {
 
     // TODO: GH#18217 Methods on System are often used as if they are certainly defined
     export interface System {
+        log(message: string): void ;//kill
         args: string[];
         newLine: string;
         useCaseSensitiveFileNames: boolean;
@@ -600,6 +601,7 @@ namespace ts {
             const tscWatchDirectory = process.env.TSC_WATCHDIRECTORY;
             let dynamicPollingWatchFile: HostWatchFile | undefined;
             const nodeSystem: System = {
+                log: message => console.log(message),
                 args: process.argv.slice(2),
                 newLine: _os.EOL,
                 useCaseSensitiveFileNames,
@@ -1155,6 +1157,7 @@ namespace ts {
         function getChakraSystem(): System {
             const realpath = ChakraHost.realpath && ((path: string) => ChakraHost.realpath(path));
             return {
+                log: notImplemented,
                 newLine: ChakraHost.newLine || "\r\n",
                 args: ChakraHost.args,
                 useCaseSensitiveFileNames: !!ChakraHost.useCaseSensitiveFileNames,

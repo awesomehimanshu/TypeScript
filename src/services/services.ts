@@ -1191,6 +1191,7 @@ namespace ts {
 
             // Now create a new compiler
             const compilerHost: CompilerHost = {
+                log: log,
                 getSourceFile: getOrCreateSourceFile,
                 getSourceFileByPath: getOrCreateSourceFileByPath,
                 getCancellationToken: () => cancellationToken,

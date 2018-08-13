@@ -327,6 +327,7 @@ namespace ts {
         function test(files: Map<string>, currentDirectory: string, rootFiles: string[], expectedFilesCount: number, relativeNamesToCheck: string[]) {
             const options: CompilerOptions = { module: ModuleKind.CommonJS };
             const host: CompilerHost = {
+                log: ts.notImplemented,
                 getSourceFile: (fileName: string, languageVersion: ScriptTarget) => {
                     const path = normalizePath(combinePaths(currentDirectory, fileName));
                     const file = files.get(path);
@@ -409,6 +410,7 @@ export = C;
             }
 
             const host: CompilerHost = {
+                log: ts.notImplemented,
                 getSourceFile: (fileName: string, languageVersion: ScriptTarget) => {
                     if (fileName === "lib.d.ts") {
                         if (!library) {
@@ -1060,6 +1062,7 @@ import b = require("./moduleB");
             const names = map(files, f => f.name);
             const sourceFiles = arrayToMap(map(files, f => createSourceFile(f.name, f.content, ScriptTarget.ES2015)), f => f.fileName);
             const compilerHost: CompilerHost = {
+                log: ts.notImplemented,
                 fileExists : fileName => sourceFiles.has(fileName),
                 getSourceFile: fileName => sourceFiles.get(fileName),
                 getDefaultLibFileName: () => "lib.d.ts",
@@ -1099,6 +1102,7 @@ import b = require("./moduleB");
             };
             const file = createSourceFile(f.name, f.content, ScriptTarget.ES2015);
             const compilerHost: CompilerHost = {
+                log: ts.notImplemented,
                 fileExists : fileName => fileName === file.fileName,
                 getSourceFile: fileName => fileName === file.fileName ? file : undefined,
                 getDefaultLibFileName: () => "lib.d.ts",
@@ -1128,6 +1132,7 @@ import b = require("./moduleB");
             };
             const file = createSourceFile(f.name, f.content, ScriptTarget.ES2015);
             const compilerHost: CompilerHost = {
+                log: ts.notImplemented,
                 fileExists : fileName => fileName === file.fileName,
                 getSourceFile: fileName => fileName === file.fileName ? file : undefined,
                 getDefaultLibFileName: () => "lib.d.ts",

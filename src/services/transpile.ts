@@ -75,6 +75,7 @@ namespace ts {
 
         // Create a compilerHost object to allow the compiler to read and write files
         const compilerHost: CompilerHost = {
+            log: notImplemented,
             getSourceFile: (fileName) => fileName === normalizePath(inputFileName) ? sourceFile : undefined,
             writeFile: (name, text) => {
                 if (fileExtensionIs(name, ".map")) {

@@ -321,6 +321,8 @@ interface Array<T> {}`
     export class TestServerHost implements server.ServerHost, FormatDiagnosticsHost, ModuleResolutionHost {
         args: string[] = [];
 
+        log = ts.notImplemented;
+
         private readonly output: string[] = [];
 
         private fs: Map<FSEntry> = createMap<FSEntry>();

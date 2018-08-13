@@ -4815,6 +4815,7 @@ namespace ts {
     export type HasInvalidatedResolution = (sourceFile: Path) => boolean;
 
     export interface CompilerHost extends ModuleResolutionHost {
+        log(message: string): void; //kill
         getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
         getSourceFileByPath?(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
         getCancellationToken?(): CancellationToken;

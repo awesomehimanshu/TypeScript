@@ -658,6 +658,8 @@ namespace Harness.LanguageService {
             this.newLine = this.host.getNewLine();
         }
 
+        log = ts.notImplemented;
+
         onMessage = ts.noop;
         writeMessage = ts.noop; // overridden
         write(message: string): void {

@@ -24,6 +24,8 @@ namespace fakes {
         private readonly _executingFilePath: string | undefined;
         private readonly _env: Record<string, string> | undefined;
 
+        log = ts.notImplemented;
+
         constructor(vfs: vfs.FileSystem, { executingFilePath, newLine = "\r\n", env }: SystemOptions = {}) {
             this.vfs = vfs.isReadonly ? vfs.shadow() : vfs;
             this.useCaseSensitiveFileNames = !this.vfs.ignoreCase;
@@ -227,6 +229,8 @@ namespace fakes {
             this._setParentNodes = setParentNodes;
             this._outputsMap = new collections.SortedMap(this.vfs.stringComparer);
         }
+
+        log = ts.notImplemented;
 
         public get vfs() {
             return this.sys.vfs;

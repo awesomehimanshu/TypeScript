@@ -120,6 +120,7 @@ namespace ts {
         const trace: string[] = [];
 
         return {
+            log: ts.notImplemented,
             trace: s => trace.push(s),
             getTrace: () => trace,
             getSourceFile(fileName): SourceFile {

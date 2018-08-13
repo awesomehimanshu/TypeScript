@@ -6,6 +6,7 @@ namespace ts {
                 const fileMap = arrayToMap(roots, file => file.fileName);
                 const outputs = createMap<string>();
                 const host: CompilerHost = {
+                    log: ts.notImplemented,
                     getSourceFile: (fileName) => fileMap.get(fileName),
                     getDefaultLibFileName: () => "lib.d.ts",
                     getCurrentDirectory: () => "",

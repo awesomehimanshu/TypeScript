@@ -3183,8 +3183,9 @@ namespace ts {
     }
 
     export function getDeclarationEmitOutputFilePath(fileName: string, host: EmitHost) {
-        // TODO: GH#25810 following should work but makes the build break:
-        // return getDeclarationEmitOutputFilePathWorker(fileName, host.getCompilerOptions(), host.getCurrentDirectory(), host.getCommonSourceDirectory(), f => host.getCanonicalFileName(f));
+        //TODO: GH#25810 following should work but makes the build break:
+        //const resultA = getDeclarationEmitOutputFilePathWorker(fileName, host.getCompilerOptions(), host.getCurrentDirectory(), host.getCommonSourceDirectory(), f => host.getCanonicalFileName(f));
+        host.getCommonSourceDirectory(); //should not have a side effect...
 
         const options = host.getCompilerOptions();
         const outputDir = options.declarationDir || options.outDir; // Prefer declaration folder if specified
@@ -3192,7 +3193,10 @@ namespace ts {
         const path = outputDir
             ? getSourceFilePathInNewDir(fileName, host, outputDir)
             : fileName;
-        return removeFileExtension(path) + Extension.Dts;
+        const resultB = removeFileExtension(path) + Extension.Dts;
+
+        //Debug.assertEqual(resultA, resultB);
+        return resultB;
     }
 
     export function getDeclarationEmitOutputFilePathWorker(fileName: string, options: CompilerOptions, currentDirectory: string, commonSourceDirectory: string, getCanonicalFileName: GetCanonicalFileName): string {
@@ -7259,8 +7263,6 @@ namespace ts {
         if (pathComponents.length === 0) return "";
 
         const root = pathComponents[0] && ensureTrailingDirectorySeparator(pathComponents[0]);
-        if (pathComponents.length === 1) return root;
-
         return root + pathComponents.slice(1).join(directorySeparator);
     }
 

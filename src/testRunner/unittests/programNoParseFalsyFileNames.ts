@@ -9,6 +9,7 @@ namespace ts {
             }`;
 
             const host: CompilerHost = {
+                log: ts.notImplemented,
                 getSourceFile: (fileName: string, languageVersion: ScriptTarget, _onError?: (message: string) => void) => {
                     return fileName === "test.ts" ? createSourceFile(fileName, testSource, languageVersion) : undefined;
                 },

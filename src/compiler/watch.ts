@@ -501,6 +501,7 @@ namespace ts {
         }
 
         const compilerHost: CompilerHost & ResolutionCacheHost = {
+            log: writeLog,
             // Members for CompilerHost
             getSourceFile: (fileName, languageVersion, onError?, shouldCreateNewSourceFile?) => getVersionedSourceFileByPath(fileName, toPath(fileName), languageVersion, onError, shouldCreateNewSourceFile),
             getSourceFileByPath: getVersionedSourceFileByPath,
